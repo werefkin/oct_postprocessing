@@ -22,7 +22,7 @@ c_k = 10
 # f0 frequency range (tilted plate shaped)
 f_start_range1 = np.linspace(20,2,N,endpoint=True)
 f_start_range2 = np.linspace(40,20,N,endpoint=True)
-offset = 10 # aka plate thickness
+offset = 0.5 # aka plate thickness
 
 # Generate chirped signal (for calibration vector)
 time = np.linspace(0, 12, N) # time
@@ -40,33 +40,7 @@ plt.show()
 
 # Generate some noise
 # Generate the noise vector
-noise = np.random.normal(0, 1, N)
-
-# Multiply the noise by a 1/f filter to make the spectrum decrease with frequency
-f = np.fft.fftfreq(N)
-f_filter = np.abs(f)**(-0.1)
-f_filter[0] = f_filter[1] # fix NaN in the 0th column
-
-plt.figure()
-plt.title('Spectral behaviour of noise')
-plt.plot(f_filter)
-plt.show()
-
-noise_fft = np.fft.fft(noise, axis=0)
-noise_filtered_fft = noise_fft#*f_filter
-
-plt.figure()
-plt.title('Spectragram of noise')
-plt.plot(noise_filtered_fft)
-plt.show()
-
-noise_filtered = np.real(np.fft.ifft(noise_filtered_fft, axis=0))
-
-# Normalize the noise between whatever
-noise_min = np.min(noise_filtered)
-noise_max = np.max(noise_filtered)
-noise_range = noise_max - noise_min
-noise_fin = (noise_filtered - noise_min) / noise_range * n_up + n_low
+noise_fin = np.random.normal(0, 0.03, N)
 
 # plt.figure()
 # plt.title('Noise')
@@ -103,30 +77,15 @@ plt.imshow(b_data)
 plt.show()
 
 # Generate the noise 2D array
-# 1/f noise
-f = np.fft.fftfreq(N)
-f_filter = np.abs(f)**(-0.3)
-f_filter[0] = f_filter[1] # fix NaN in the 0th column
 
-
-noise_b = np.random.normal(0, 1, b_data.shape)
-noise_b_fft = np.fft.fft(noise_b, axis=0)
-
-noise_b_filtered_fft = noise_b_fft#*f_filter[None, :]
-noise_b_filtered = np.real(np.fft.ifft(noise_b_filtered_fft, axis=0))
-
-# Normalize the noise between 0.05 and 10
-noise_b_range = np.max(noise_b_filtered) - np.min(noise_b_filtered)
-noise_b_fin = (noise_b_filtered - np.min(noise_b_filtered)) / noise_b_range * n_up + n_low
-
-# I have a raw data from SD-OCT (sine like modulation) and I reconstruct the image by taken fourier transform. I do see some aliasing artefacts (like lines on different frequencies). how one can get rid of these artifacts in python?
+noise_b = np.random.normal(0, 0.01, b_data.shape)
 
 # plt.figure()
 # plt.title('Noise')
 # plt.imshow(noise_b_fin)
 # plt.show()
 
-b_data += noise_b_fin
+b_data += noise_b
 
 plt.figure()
 plt.title('B-scan data with noise')
@@ -137,21 +96,8 @@ plt.show()
 
 cal_vector = np.load('./correction/calibration_vector.npy')
 boundaries = np.load('./correction/boundaries.npy')
-cal_vector = savgol_filter(cal_vector, 200, 6) 
-# cal_vector = gaussian_filter(cal_vector, sigma=4)
+# cal_vector = savgol_filter(cal_vector, 200, 2) 
 
-# Fit a function to the data using np.polyfit
-
-# x = np.linspace(0, len(cal_vector), len(cal_vector))
-# coefs = poly.polyfit(x, cal_vector, 70)
-# ffit = poly.polyval(x, coefs)
-
-# plt.figure()
-# plt.plot(cal_vector)
-# plt.plot(ffit)
-
-# cal_vector = ffit
-# plt.show()
 
 
 

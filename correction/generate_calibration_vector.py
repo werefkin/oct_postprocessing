@@ -17,7 +17,7 @@ kind1="quadratic"
 
 # Params
 PV = True # peak valleys?
-pf = 2 # fit poly
+pf = True # fit poly
 height_si = 0.22 #height for single sided
 height_pv = 0.05 #height for double sided (PV mode)
 gauske = 2 #gaussian kernel size
@@ -139,8 +139,11 @@ if pf == True:
 uncorrected = abs(np.fft.fftshift(np.fft.fft(fri)))
 
 remap_interp_func = interp1d(CalVector,signal_nonlin_wl[peaks[0]:peaks[-1]], kind=kind1,fill_value="extrapolate")
-signal_2nonlin_wl = remap_interp_func(np.linspace(peaks[0],peaks[-1],len(fri),endpoint=True)) 
+signal_2nonlin_wl = remap_interp_func(np.linspace(peaks[0],peaks[-1],len(CalVector),endpoint=True)) 
 
+NN = (N-len(CalVector))/2
+
+signal_2nonlin_wl = np.pad(signal_2nonlin_wl, (int(NN), int(NN)), 'constant')
 corrected=abs(np.fft.fftshift(np.fft.fft(signal_2nonlin_wl)))
 
 np.save('calibration_vector.npy',CalVector)

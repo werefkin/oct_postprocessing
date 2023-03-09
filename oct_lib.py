@@ -29,7 +29,9 @@ def remap_to_k(data,ref,lmin,lmax,cal_vector=None,boundaries=None):
         print("Calibration-vector based")
         N=np.shape(data)[1]
         remap_interp_func = interp1d(cal_vector,data[:,boundaries[0]:boundaries[-1]],axis=1, kind=kind1,fill_value="extrapolate")
-        spectral_interferograms = remap_interp_func(np.linspace(boundaries[0],boundaries[-1],N,endpoint=True)) 
+        spectral_interferograms = remap_interp_func(np.linspace(boundaries[0],boundaries[-1],len(cal_vector),endpoint=True)) 
+        NN = (N-len(cal_vector))/2
+        spectral_interferograms = np.pad(spectral_interferograms, ((0, 0),(int(NN), int(NN))), 'constant')
     else:
         print("Standard processing")
         N=np.shape(data)[1]
