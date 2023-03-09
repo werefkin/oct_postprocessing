@@ -11,13 +11,25 @@ from matplotlib import rc
 from scipy.interpolate import interp1d
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
+import numpy.polynomial.polynomial as poly
+
+kind1="quadratic"
 
 # Params
 PV = True # peak valleys?
-
+pf = 2 # fit poly
+height_si = 0.22 #height for single sided
+height_pv = 0.05 #height for double sided (PV mode)
+gauske = 2 #gaussian kernel size
+pedist = 10 #distance between
 # Load data
-spectrum = np.load('spectrum.npy')
-interference = np.load('fringes.npy')
+try:
+    spectrum = np.load('spectrum.npy')
+    interference = np.load('fringes.npy')
+except:
+    spectrum = np.load('./correction/spectrum.npy')
+    interference = np.load('./correction/fringes.npy')
+    
 
 N = len(spectrum) # Length
 
@@ -25,8 +37,7 @@ N = len(spectrum) # Length
 fri = interference-spectrum
 
 # Detect peaks and make linear space (one should adjust filter and peak detection parameters)
-signal_nonlin_wl = gaussian_filter1d(fri, 2) #filter noise in fringe detection
-# peaks, _ = find_peaks(signal_nonlin_wl, height=0.01,distance=10)
+signal_nonlin_wl = gaussian_filter1d(fri, gauske) #filter noise in fringe detection
 
 
 if PV == True:
@@ -35,12 +46,15 @@ if PV == True:
 
     grad_signal = np.gradient(signal_nonlin_wl) #remove baseline
 
-    peaks_p, _ = find_peaks(grad_signal, height=0.05,distance=10)
-    peaks_n, _ = find_peaks(-grad_signal, height=0.05,distance=10)
+    peaks_p, _ = find_peaks(grad_signal, height=height_pv,distance=pedist)
+    peaks_n, _ = find_peaks(-grad_signal, height=height_pv,distance=pedist)
 
-
-    x = peaks_p
-    y = peaks_n
+    if peaks_p[0]>peaks_n[0]:
+        x = peaks_n
+        y = peaks_p
+    if peaks_p[0]<peaks_n[0]:
+        x = peaks_p
+        y = peaks_n
     len_x = len(x)
     len_y = len(y)
 
@@ -77,7 +91,7 @@ if PV == True:
     plt.plot(xx[peaks],grad_signal[peaks],'*')
 
 if PV != True:
-    peaks, _ = find_peaks(signal_nonlin_wl, height=0.22,distance=10)
+    peaks, _ = find_peaks(signal_nonlin_wl, height=height_si,distance=pedist )
     plt.figure()
     xx=np.linspace(0,N,N,endpoint=True)
     plt.plot(xx,signal_nonlin_wl)
@@ -87,20 +101,49 @@ if PV != True:
 linpeaks=np.linspace(peaks[0],peaks[-1],len(peaks))
 
 
-peak_pos_cor_interp_func = interp1d(peaks, linpeaks,  kind="quadratic",fill_value="extrapolate")
+peak_pos_cor_interp_func = interp1d(peaks, linpeaks,  kind=kind1,fill_value="extrapolate")
 siglength=np.linspace(peaks[0],peaks[-1],len(signal_nonlin_wl[peaks[0]:peaks[-1]]),endpoint=True) 
 
 
-peak_corrected_range = peak_pos_cor_interp_func(siglength)
+CalVector = peak_pos_cor_interp_func(siglength)
 
-uncorrected=abs(np.fft.fftshift(np.fft.fft(fri)))
+# fun_extraCalVector= interp1d(siglength, CalVector,  kind="slinear",fill_value="extrapolate")
+# extlength=np.linspace(0,N,N,endpoint=True) 
 
-remap_interp_func = interp1d(peak_corrected_range,signal_nonlin_wl[peaks[0]:peaks[-1]], kind="quadratic",fill_value="extrapolate")
+# exCalVector = fun_extraCalVector(extlength)
+
+# plt.figure()
+# plt.plot(extlength,exCalVector)
+# plt.plot(siglength,CalVector)
+# plt.show()
+
+if pf == True:
+    # fit pol
+    x = np.linspace(peaks[0], peaks[-1], len(CalVector))
+    coefs = poly.polyfit(x, CalVector, deg=3)
+
+    f = np.poly1d(coefs)
+
+    ffit = poly.polyval(x, coefs)
+
+    plt.figure()
+    plt.plot(CalVector)
+    plt.plot(ffit)
+
+    CalVector = ffit
+    plt.show()
+
+
+#fin fot pol
+
+uncorrected = abs(np.fft.fftshift(np.fft.fft(fri)))
+
+remap_interp_func = interp1d(CalVector,signal_nonlin_wl[peaks[0]:peaks[-1]], kind=kind1,fill_value="extrapolate")
 signal_2nonlin_wl = remap_interp_func(np.linspace(peaks[0],peaks[-1],len(fri),endpoint=True)) 
 
 corrected=abs(np.fft.fftshift(np.fft.fft(signal_2nonlin_wl)))
 
-np.save('calibration_vector.npy',peak_corrected_range)
+np.save('calibration_vector.npy',CalVector)
 boundaries=np.array([peaks[0],peaks[-1]])
 np.save('boundaries.npy',boundaries)
 

@@ -20,6 +20,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.signal import hilbert
 
+kind1="quadratic"
 
 def remap_to_k(data,ref,lmin,lmax,cal_vector=None,boundaries=None):  
     data=data-ref
@@ -27,7 +28,7 @@ def remap_to_k(data,ref,lmin,lmax,cal_vector=None,boundaries=None):
         
         print("Calibration-vector based")
         N=np.shape(data)[1]
-        remap_interp_func = interp1d(cal_vector,data[:,boundaries[0]:boundaries[-1]],axis=1, kind="quadratic",fill_value="extrapolate")
+        remap_interp_func = interp1d(cal_vector,data[:,boundaries[0]:boundaries[-1]],axis=1, kind=kind1,fill_value="extrapolate")
         spectral_interferograms = remap_interp_func(np.linspace(boundaries[0],boundaries[-1],N,endpoint=True)) 
     else:
         print("Standard processing")
@@ -35,7 +36,7 @@ def remap_to_k(data,ref,lmin,lmax,cal_vector=None,boundaries=None):
         rang=np.linspace(lmin,lmax,N,endpoint=True) 
         wnrang=1/rang
         wn_corr=np.linspace(wnrang[0],wnrang[-1],N)
-        remap_interp_func = interp1d(wnrang,data, axis=1, kind="quadratic",fill_value="extrapolate")
+        remap_interp_func = interp1d(wnrang,data, axis=1, kind=kind1,fill_value="extrapolate")
         spectral_interferograms = remap_interp_func(wn_corr)
     return(spectral_interferograms)
 
