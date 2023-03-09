@@ -54,7 +54,7 @@ plt.plot(spectral_interferogram)
 plt.show()
 
 
-
+# save it
 np.save('./correction/spectrum.npy', 2*env)
 np.save('./correction/fringes.npy', spectral_interferogram)
 
@@ -80,12 +80,43 @@ plt.show()
 
 noise_b = np.random.normal(0, 0.01, b_data.shape)
 
+
+# Set the size of the array and the exponent of the power-law filter
+alpha = -0.4
+# Generate the 1/f filter
+freqs = np.fft.fftfreq(N)
+freqs_shifted = np.fft.fftshift(freqs)
+filt = np.ones_like(freqs_shifted)
+filt[N//2+1:] = 0
+ramp = np.abs(np.linspace(-1, 1, N))
+filt *= ramp ** alpha
+filt[N//2] = 0
+
+# Symmetrize the filter
+f_filter = filt + filt[::-1]
+
+# Normalize the filter
+f_filter /= np.max(f_filter)
+
+f_filter = np.fft.fftshift(f_filter)
+# Plot the filter
+plt.plot(f_filter)
+plt.show()
+
+
+noise_b = np.random.normal(0, 2, b_data.shape)
+noise_b_fft = abs(np.fft.fft(noise_b, axis=0))
+
+noise_b_filtered_fft = noise_b_fft*f_filter[:, None]
+noise_b_filtered = np.real(np.fft.ifft(noise_b_filtered_fft, axis=0))
+
+
 # plt.figure()
 # plt.title('Noise')
 # plt.imshow(noise_b_fin)
 # plt.show()
 
-b_data += noise_b
+b_data += np.transpose(noise_b_filtered)/2
 
 plt.figure()
 plt.title('B-scan data with noise')
@@ -97,7 +128,6 @@ plt.show()
 cal_vector = np.load('./correction/calibration_vector.npy')
 boundaries = np.load('./correction/boundaries.npy')
 # cal_vector = savgol_filter(cal_vector, 200, 2) 
-
 
 
 
