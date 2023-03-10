@@ -12,6 +12,10 @@ from scipy.interpolate import interp1d
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
 import numpy.polynomial.polynomial as poly
+from scipy.optimize import curve_fit
+
+def func(x, a, b, c, d): # log
+    return a*np.log(d*x + b)+c
 
 kind1="quadratic"
 
@@ -133,6 +137,17 @@ if pf == True:
     CalVector = ffit
     plt.show()
 
+# # scipy based curve fitting
+# initialParameters = np.array([1.0, 1.0, 1.0, 1.0])
+
+# fittedParameters, pcov = curve_fit(func, x, CalVector, initialParameters)
+
+# modelPredictions = func(x, *fittedParameters) 
+# xModel = np.linspace(min(x), max(x),len(x))
+
+# yModel = func(xModel, *fittedParameters)
+
+# CalVector = yModel
 
 #fin fot pol
 
