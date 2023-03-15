@@ -8,7 +8,10 @@ import numpy.polynomial.polynomial as poly
 from scipy.signal import savgol_filter
 
 
-# In this code we neglect that the integral of the spectral interferogram should be approx. constant
+
+# SAVE new reference pattern
+
+SAVE = False
 
 N = 1024 # Samples number
 
@@ -24,7 +27,7 @@ f_start_range1 = np.linspace(20,2,N,endpoint=True)
 f_start_range2 = np.linspace(40,20,N,endpoint=True)
 offset = 0.5 # aka plate thickness
 
-# Generate chirped signal (for calibration vector)
+# Generate chirped signal (for calibration vector); the chirp is linear just for simplicity; one can add other nonlinearities to compensate for
 time = np.linspace(0, 12, N) # time
 start_freq = 10
 fringes = chirp(time, f0=start_freq, f1=start_freq/c_k, t1=10, method='linear') #fringes
@@ -55,8 +58,9 @@ plt.show()
 
 
 # save it
-np.save('./correction/spectrum.npy', 2*env)
-np.save('./correction/fringes.npy', spectral_interferogram)
+if SAVE == True:
+    np.save('./correction/spectrum.npy', 2*env)
+    np.save('./correction/fringes.npy', spectral_interferogram)
 
 
 # Generate B_scan data
